@@ -1,5 +1,5 @@
 /* Centering Centre service worker: caches the app so it opens offline. Bump CACHE when files change. */
-var CACHE = 'cc-v1';
+var CACHE = 'cc-v2';
 var SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(SHELL); }).then(function () { return self.skipWaiting(); }));
