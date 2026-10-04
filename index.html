@@ -1,0 +1,959 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2b46d6">
+<meta name="description" content="Check centering and white dots on trading cards before you pay to grade them.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Centering Centre">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Centering Centre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one 480px phone column. Bottom tab bar (Scans / New scan). Flow: capture -> analyze -> result (Summary | Inspect). */
+:root {
+  color-scheme: light;
+  --bg: #eceff3;
+  --surface: #ffffff;
+  --surface-2: #e2e7ee;
+  --ink: #141a24;
+  --ink-2: #566070;
+  --line: #cfd6e0;
+  --accent: #2b46d6;
+  --accent-ink: #ffffff;
+  --accent-soft: #dfe5fb;
+  --warn: #b86e00;
+  --warn-soft: #fbeccd;
+  --bad: #b8352b;
+  --bad-soft: #f8dcd8;
+  --good: #1b7d52;
+  --good-soft: #d6efe3;
+  --f-display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  padding-top: env(safe-area-inset-top, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f131a; --surface: #171d27; --surface-2: #212937; --ink: #eaeef5; --ink-2: #9aa5b8;
+    --line: #2b3546; --accent: #7d92ff; --accent-ink: #0d1330; --accent-soft: #222b55;
+    --warn: #f0a537; --warn-soft: #3a2a0c; --bad: #ff8a7d; --bad-soft: #3d1c19;
+    --good: #55d29b; --good-soft: #143427; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f131a; --surface: #171d27; --surface-2: #212937; --ink: #eaeef5; --ink-2: #9aa5b8;
+  --line: #2b3546; --accent: #7d92ff; --accent-ink: #0d1330; --accent-soft: #222b55;
+  --warn: #f0a537; --warn-soft: #3a2a0c; --bad: #ff8a7d; --bad-soft: #3d1c19;
+  --good: #55d29b; --good-soft: #143427; color-scheme: dark;
+}
+[hidden] { display: none !important; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { -webkit-text-size-adjust: 100%; }
+html, body { min-height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.45; padding-inline: 16px; padding-block: 0; }
+img { max-width: 100%; }
+.app { max-width: 480px; margin: 0 auto; padding-block: 14px 110px; }
+h1, h2, h3 { font-family: var(--f-display); margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h1 { font-size: 30px; font-weight: 800; line-height: 1.05; }
+h2 { font-size: 20px; font-weight: 700; }
+h3 { font-size: 15px; font-weight: 700; }
+p { margin: 0; }
+button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.label { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 4px 18px; }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--f-display); font-weight: 800; font-size: 19px; }
+.brand svg { width: 26px; height: 26px; flex: none; }
+.pill { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 8px; border-radius: 99px; background: var(--warn-soft); color: var(--warn); white-space: nowrap; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 12px; padding: 12px 16px; min-height: 48px; font-weight: 600; background: var(--accent); color: var(--accent-ink); text-align: center; width: 100%; }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.btn.small { min-height: 40px; padding: 8px 12px; font-size: 13.5px; border-radius: 10px; width: auto; }
+.btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+.btn svg { width: 20px; height: 20px; flex: none; }
+.row { display: flex; gap: 12px; align-items: center; }
+.between { justify-content: space-between; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+
+/* file picker: the real input sits invisibly on top of the button, so a tap opens the phone gallery */
+.pick { position: relative; display: block; }
+.pick input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; }
+.pick:focus-within .btn { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* scan list */
+.scan { display: grid; grid-template-columns: 64px 1fr; gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; width: 100%; text-align: left; align-items: center; }
+.scan canvas { width: 64px; height: auto; border-radius: 4px; display: block; }
+.scan .name { font-family: var(--f-display); font-weight: 700; font-size: 16px; overflow-wrap: anywhere; }
+.scan .meta { color: var(--ink-2); font-size: 12.5px; margin-bottom: 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-family: var(--f-mono); font-size: 12px; background: var(--surface-2); border-radius: 6px; padding: 3px 7px; }
+.chip b { font-weight: 500; color: var(--ink-2); margin-right: 5px; }
+.empty { background: var(--surface); border: 1px dashed var(--line); border-radius: 14px; padding: 18px; color: var(--ink-2); }
+
+/* capture */
+.bulk { background: var(--accent-soft); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.bulk p { color: var(--ink-2); font-size: 13.5px; }
+.slot { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; }
+.slot .thumbs, .slot .pick { grid-column: 1 / -1; }
+.dot { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; font-size: 13px; font-weight: 700; color: var(--accent-ink); margin-top: 1px; }
+.slot.done .dot { background: var(--good); border-color: var(--good); }
+.slot .hint { color: var(--ink-2); font-size: 13px; margin-top: 2px; }
+.thumbs { display: flex; gap: 8px; flex-wrap: wrap; }
+.thumbs img, .thumbs video { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; background: var(--surface-2); }
+.req { color: var(--bad); font-family: var(--f-mono); font-size: 11px; margin-left: 6px; }
+.guide { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; grid-template-columns: 88px 1fr; gap: 14px; align-items: center; }
+.guide svg { width: 88px; height: 72px; }
+.guide ol { margin: 6px 0 0; padding-left: 18px; font-size: 13.5px; }
+.bar-progress { height: 6px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+.bar-progress i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .3s; }
+
+/* analyzing */
+.overlay { position: fixed; inset: 0; background: var(--bg); z-index: 20; display: grid; place-items: center; padding: 24px; }
+.overlay .inner { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 18px; }
+.steps { display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
+.steps div { display: flex; gap: 10px; align-items: center; color: var(--ink-2); }
+.steps div i { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--line); flex: none; }
+.steps div.on { color: var(--ink); }
+.steps div.on i { border-color: var(--accent); background: var(--accent); }
+
+/* result */
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--surface-2); padding: 3px; border-radius: 12px; gap: 3px; }
+.seg button { border: 0; background: transparent; padding: 11px 6px; min-height: 44px; border-radius: 10px; font-weight: 600; font-size: 14px; color: var(--ink-2); }
+.seg button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.head { display: grid; grid-template-columns: 76px 1fr; gap: 14px; align-items: center; }
+.head canvas { width: 76px; height: auto; border-radius: 4px; display: block; }
+.nameIn { font-family: var(--f-display); font-size: 22px; font-weight: 800; letter-spacing: -0.01em; border: 0; border-bottom: 1px dashed var(--line); background: transparent; color: var(--ink); padding: 4px 0; width: 100%; min-width: 0; }
+.verdict { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+.verdict.notice { background: var(--warn-soft); border-color: transparent; }
+.note { font-size: 12.5px; color: var(--ink-2); }
+
+/* inspect */
+.viewer { background: #0b0f17; border-radius: 14px; padding: 12px; overflow: auto; -webkit-overflow-scrolling: touch; }
+.viewer canvas { display: block; width: 100%; max-width: 420px; height: auto; margin: 0 auto; border-radius: 4px; cursor: zoom-in; }
+.viewer.zoom { max-height: 72vh; }
+.viewer.zoom canvas { width: 220%; max-width: none; margin: 0; cursor: zoom-out; }
+.viewer.cen canvas { cursor: grab; }
+.vidbox { background: #0b0f17; border-radius: 14px; padding: 12px; }
+.vidbox video { display: block; width: 100%; max-height: 70vh; border-radius: 8px; background: #000; }
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; min-height: 64px; }
+.switch strong { font-weight: 600; display: block; }
+.switch span { color: var(--ink-2); font-size: 13px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.card input[type="range"] { width: 100%; margin: 10px 0 4px; height: 32px; accent-color: var(--accent); }
+.card span { color: var(--ink-2); font-size: 13px; }
+.tg { position: relative; width: 52px; height: 32px; flex: none; }
+.tg input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; margin: 0; cursor: pointer; }
+.tg i { position: absolute; inset: 0; background: var(--line); border-radius: 99px; transition: background .15s; pointer-events: none; }
+.tg i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.tg input:checked + i { background: var(--accent); }
+.tg input:checked + i::after { transform: translateX(20px); }
+.tg input:focus-visible + i { outline: 2px solid var(--accent); outline-offset: 2px; }
+.count { display: flex; gap: 10px; align-items: baseline; }
+.count b { font-family: var(--f-display); font-size: 40px; font-weight: 800; line-height: 1; }
+
+/* centering tool */
+.tsel { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); }
+select { font: inherit; font-size: 16px; padding: 8px 10px; min-height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.meas { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.meas.three { grid-template-columns: repeat(3, 1fr); }
+.meas div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.meas b { font-family: var(--f-display); font-size: 34px; font-weight: 800; line-height: 1.05; }
+.meas.three b { font-size: 26px; }
+.meas .mono { font-size: 12px; color: var(--ink-2); overflow-wrap: anywhere; }
+.why { margin-top: 10px; }
+.capline { font-size: 12.5px; margin-top: 6px; color: var(--ink-2); }
+.ladder { margin-top: 12px; display: flex; flex-direction: column; gap: 4px; font-family: var(--f-mono); font-size: 12.5px; }
+.lad { display: grid; grid-template-columns: 1.3fr 1fr 1fr 88px; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 8px; }
+.lad > span { min-width: 0; overflow-wrap: anywhere; }
+.lad.head { color: var(--ink-2); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; padding-block: 0; }
+.lad.target { background: var(--accent-soft); }
+.st { justify-self: end; padding: 2px 8px; border-radius: 99px; font-size: 11px; text-align: center; white-space: nowrap; }
+.st.ok { background: var(--good-soft); color: var(--good); }
+.st.edge { background: var(--warn-soft); color: var(--warn); }
+.st.over { background: var(--bad-soft); color: var(--bad); }
+
+/* tabs and toast */
+nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px)); z-index: 10; }
+nav.tabs div { max-width: 480px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+nav.tabs button { border: 0; background: transparent; padding: 10px; min-height: 48px; border-radius: 12px; font-weight: 600; color: var(--ink-2); display: flex; align-items: center; justify-content: center; gap: 8px; }
+nav.tabs button[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
+nav.tabs svg { width: 18px; height: 18px; }
+.back { border: 0; background: none; color: var(--accent); font-weight: 600; padding: 8px 0; min-height: 40px; margin-bottom: 6px; display: inline-flex; gap: 4px; align-items: center; }
+.toast { position: fixed; left: 16px; right: 16px; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); max-width: 448px; margin: 0 auto; background: var(--ink); color: var(--bg); padding: 12px 14px; border-radius: 12px; font-size: 14px; z-index: 30; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="top">
+    <div class="brand">
+      <svg viewBox="0 0 26 26" fill="none" aria-hidden="true"><rect x="5" y="2" width="16" height="22" rx="2.5" stroke="currentColor" stroke-width="2.2"/><rect x="8.5" y="6" width="9" height="11" rx="1" fill="currentColor"/></svg>
+      Centering Centre
+    </div>
+    <span class="pill">Beta</span>
+  </div>
+
+  <!-- HOME -->
+  <section id="home" class="stack" style="gap:18px">
+    <div>
+      <h1>Check the centering before you pay to grade.</h1>
+      <p style="color:var(--ink-2);margin-top:10px">Pick photos of your card from your phone gallery. Centering Centre measures the borders, flags white dots and shows what PSA, Beckett and TAG limits allow.</p>
+    </div>
+    <div class="bulk" id="installBox" hidden>
+      <p id="installTxt"></p>
+      <button class="btn" id="installBtn" hidden>Install the app</button>
+    </div>
+    <button class="btn" id="startNew">Start a new scan</button>
+    <div class="row between"><h2>Saved scans</h2><span class="label">On this phone</span></div>
+    <div class="stack" id="scanList"></div>
+    <p class="note" id="storeWarn" hidden>This browser cannot save scans. They last until you close the tab.</p>
+    <p class="note">Photos and videos stay on this phone. Nothing is uploaded.</p>
+  </section>
+
+  <!-- CAPTURE -->
+  <section id="capture" class="stack" hidden>
+    <div><button class="back" data-go="home">← Scans</button><h1 style="font-size:26px">New scan</h1></div>
+
+    <div class="bulk">
+      <div class="pick">
+        <span class="btn"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2" y="3" width="16" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><circle cx="7" cy="8" r="1.6" fill="currentColor"/><path d="M3 15l4.5-4.5 3 3 2-2L17 16" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>Choose from gallery</span>
+        <input type="file" id="bulk" accept="image/*,video/*" multiple aria-label="Choose photos and a video from your gallery">
+      </div>
+      <p>Select the front photo, the back photo and the tilt video together. Tap them in that order. You can fix any slot below.</p>
+    </div>
+
+    <div>
+      <div class="row between" style="margin-bottom:6px"><span class="label">Files added</span><span class="mono" id="progText">0 / 3 required</span></div>
+      <div class="bar-progress"><i id="progBar"></i></div>
+    </div>
+
+    <div class="stack" id="slots"></div>
+
+    <div class="row" style="gap:8px">
+      <button class="btn ghost small" id="swap" hidden>Swap front and back</button>
+      <button class="btn ghost small" id="clearAll">Clear all</button>
+    </div>
+
+    <div class="guide">
+      <svg viewBox="0 0 96 76" fill="none" aria-hidden="true">
+        <circle cx="14" cy="14" r="8" fill="var(--warn)"/>
+        <path d="M22 18 L52 38" stroke="var(--warn)" stroke-width="2" stroke-dasharray="3 3"/>
+        <g transform="rotate(-18 62 46)"><rect x="46" y="18" width="34" height="48" rx="3" fill="var(--surface)" stroke="var(--accent)" stroke-width="2.4"/></g>
+        <path d="M30 70 Q62 76 84 62" stroke="var(--accent)" stroke-width="2" fill="none"/>
+        <path d="M80 59l5 3-6 2" stroke="var(--accent)" stroke-width="2" fill="none"/>
+      </svg>
+      <div>
+        <h3>Filming the tilt video</h3>
+        <ol>
+          <li>Put one light 30–45° to the side.</li>
+          <li>Tilt the card 15° each way over about 6 seconds.</li>
+          <li>Keep all four corners in frame.</li>
+        </ol>
+      </div>
+    </div>
+
+    <button class="btn" id="analyze" disabled>Measure card</button>
+    <button class="btn ghost" id="fillSample">Use a sample card instead</button>
+    <p class="note">Hold the phone square to the card and fill the frame with it. A photo taken at an angle changes the measured centering. The white dot filter reads a thin band along each edge.</p>
+  </section>
+
+  <!-- RESULT -->
+  <section id="result" class="stack" hidden>
+    <div><button class="back" data-go="home">← Scans</button></div>
+    <div class="head">
+      <canvas id="headThumb" width="152" height="212"></canvas>
+      <div class="stack" style="gap:6px;min-width:0">
+        <input id="nameIn" class="nameIn" type="text" maxlength="60" aria-label="Card name" autocomplete="off">
+        <p style="color:var(--ink-2)" id="rMeta"></p>
+      </div>
+    </div>
+    <div class="seg" role="tablist" id="viewSeg">
+      <button role="tab" aria-selected="true" data-view="verdict">Summary</button>
+      <button role="tab" aria-selected="false" data-view="inspect">Inspect</button>
+    </div>
+
+    <div id="verdictView" class="stack">
+      <div class="verdict">
+        <span class="label">Best grade centering allows</span>
+        <div class="meas three" id="capGrid" style="margin-top:10px"></div>
+        <p class="note" id="sumNote" style="margin-top:12px"></p>
+        <button class="btn small" id="toCentering" style="margin-top:12px">Check the centering lines</button>
+      </div>
+      <div class="verdict">
+        <span class="label">White dots on the borders</span>
+        <div class="meas" style="margin-top:10px">
+          <div><span class="label">Front</span><b id="sumDotsF">–</b></div>
+          <div><span class="label">Back</span><b id="sumDotsB">–</b></div>
+        </div>
+        <p class="note" style="margin-top:12px">Counted at the default sensitivity. Dots on dark borders are reliable. Light borders give false alarms.</p>
+        <button class="btn small" id="toDots" style="margin-top:12px">Open the white dot filter</button>
+      </div>
+      <div class="verdict" id="sumVideo" hidden>
+        <span class="label">Tilt video</span>
+        <p style="margin-top:8px">Scrub through it slowly. A thin bright line that appears and disappears as the card tilts is a scratch or print line.</p>
+        <button class="btn small" id="toVideo" style="margin-top:12px">Watch the tilt video</button>
+      </div>
+      <div class="verdict notice">
+        <h3>Not graded yet</h3>
+        <p style="margin-top:4px">Corners, edges and surface need the AI analysis, which is not in this version. Centering gives a ceiling, not a prediction. The real grade can only be lower.</p>
+      </div>
+      <button class="btn ghost small" id="delScan" style="align-self:flex-start">Delete this scan</button>
+    </div>
+
+    <div id="inspectView" class="stack" hidden>
+      <div class="seg" role="tablist" id="sideSeg">
+        <button role="tab" aria-selected="true" data-side="front">Front</button>
+        <button role="tab" aria-selected="false" data-side="back">Back</button>
+        <button role="tab" aria-selected="false" data-side="tilt" id="tiltTab" hidden>Tilt video</button>
+      </div>
+
+      <div id="photoPane" class="stack">
+        <div class="seg" role="tablist" id="toolSeg" aria-label="Inspection tool">
+          <button role="tab" aria-selected="true" data-tool="dots">White dots</button>
+          <button role="tab" aria-selected="false" data-tool="centering">Centering</button>
+        </div>
+        <div class="viewer" id="viewer"><canvas id="cv" width="630" height="880" aria-label="Card photo with optional whitening filter or centering lines"></canvas></div>
+        <p class="note" id="zoomHint">Tap the card to zoom in and out. Scroll sideways and down while zoomed.</p>
+
+        <div id="dotsTools" class="stack">
+          <label class="switch"><div><strong>Whitening filter</strong><span>Mutes the photo and lights up bright specks on the border.</span></div>
+            <span class="tg"><input type="checkbox" id="fltr"><i></i></span></label>
+          <label class="switch"><div><strong>Show detected dots</strong><span>Red rings around each suspected white dot.</span></div>
+            <span class="tg"><input type="checkbox" id="mrk" checked><i></i></span></label>
+          <div class="card">
+            <div class="row between"><strong>Sensitivity</strong><span class="mono" id="sensVal">60</span></div>
+            <input type="range" id="sens" min="20" max="100" value="60" aria-label="Whitening sensitivity">
+            <span>Raise it to catch faint specks. Lower it if the count looks too high.</span>
+          </div>
+          <div class="verdict">
+            <div class="count"><b id="dotCount">0</b><span id="dotLabel" style="color:var(--ink-2)">suspected white dots on the front</span></div>
+            <p class="note" style="margin-top:8px">Works best on dark borders. On light borders it flags edge contrast, so expect more false alarms.</p>
+          </div>
+        </div>
+
+        <div id="cenTools" class="stack" hidden>
+          <div class="seg" id="cenModeSeg" role="tablist" aria-label="Photo type">
+            <button role="tab" aria-selected="true" data-m="fill">Card fills the photo</button>
+            <button role="tab" aria-selected="false" data-m="surface">Card on a surface</button>
+          </div>
+          <p class="note">Drag a line to move it. Cyan lines mark the card edge. Orange lines mark where the border meets the picture. The tinted bands are the borders being compared.</p>
+          <div class="card">
+            <div class="row between"><strong id="selName">Left border to picture</strong>
+              <span class="row" style="gap:8px"><button class="btn ghost small" id="nudgeM" aria-label="Move line back">←</button><button class="btn ghost small" id="nudgeP" aria-label="Move line forward">→</button></span></div>
+            <div class="row between" style="margin-top:10px"><span>Tap a line first, then nudge it.</span><button class="btn ghost small" id="cenReset">Reset lines</button></div>
+          </div>
+          <div class="verdict">
+            <div class="meas">
+              <div><span class="label">Left to right</span><b id="cenLR">–</b><span class="mono" id="cenLRd"></span></div>
+              <div><span class="label">Top to bottom</span><b id="cenTB">–</b><span class="mono" id="cenTBd"></span></div>
+            </div>
+            <p class="note" id="cenSideNote" style="margin-top:10px"></p>
+          </div>
+          <h2 style="margin-top:4px">Why the grade is out of reach</h2>
+          <div class="stack" id="cenCards" style="gap:12px"></div>
+          <p class="note">PSA's 10 limits match the text quoted from PSA's grading standards page. The other limits come from third-party summaries and may differ from each grader's own page. TAG figures marked ~ are approximate. Beckett back centering is not scored because sources disagree. A phone photo measures to about one point.</p>
+        </div>
+      </div>
+
+      <div id="videoPane" class="stack" hidden>
+        <div class="vidbox"><video id="tiltVid" controls playsinline preload="metadata"></video></div>
+        <p class="note">Scrub slowly. A thin bright line that appears and disappears as the card tilts is a scratch or print line.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="inner">
+    <h2>Measuring your card</h2>
+    <div class="bar-progress"><i id="ovBar"></i></div>
+    <div class="steps" id="ovSteps"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<nav class="tabs"><div>
+  <button data-go="home" id="tabHome" aria-current="page"><svg viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="6" height="14" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="10" y="2" width="6" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>Scans</button>
+  <button data-go="capture" id="tabNew"><svg viewBox="0 0 18 18" fill="none"><path d="M9 3v12M3 9h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>New scan</button>
+</div></nav>
+
+<script>
+(function () {
+  var $ = function (s) { return document.querySelector(s); };
+  var $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
+
+  /* ---------- toast ---------- */
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $('#toast'); t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 4600);
+  }
+
+  /* ---------- sample card (drawn on canvas, original art) ---------- */
+  var W = 630, H = 880, P = 2 * (W + H);
+  var SAMPLE_DEF = { title: 'Tidewater', pal: ['#2aa6a0', '#3a5bd0', '#7a3fb8'], dots: { front: 9, back: 5 }, b: { front: [44, 70, 50, 60], back: [48, 52, 50, 54] } };
+  function perimeterDot(i, n) {
+    var t = (i + 0.5) * P / n, inset = 8 + ((i * 7) % 14);
+    if (t < W) return [t, inset];
+    t -= W; if (t < H) return [W - inset, t];
+    t -= H; if (t < W) return [W - t, H - inset];
+    t -= W; return [inset, H - t];
+  }
+  function makeCard(side, s) {
+    var c = document.createElement('canvas'); c.width = W; c.height = H;
+    var x = c.getContext('2d'), pal = s.pal;
+    x.fillStyle = '#16233f'; x.fillRect(0, 0, W, H);
+    if (side === 'front') {
+      var L = s.b.front[0], R = s.b.front[1], T = s.b.front[2], B = s.b.front[3];
+      x.fillStyle = '#ece5d2'; x.fillRect(L, T, W - L - R, H - T - B);
+      x.fillStyle = '#16233f'; x.fillRect(L + 18, T + 16, W - L - R - 36, 58);
+      x.fillStyle = '#ece5d2'; x.font = '700 34px Helvetica, Arial, sans-serif'; x.fillText(s.title, L + 34, T + 56);
+      x.font = '600 26px Helvetica, Arial, sans-serif'; x.fillText('HP 120', W - R - 140, T + 54);
+      var ax = L + 26, ay = T + 92, aw = W - L - R - 52, ah = 380;
+      var g = x.createLinearGradient(ax, ay, ax + aw, ay + ah);
+      g.addColorStop(0, pal[0]); g.addColorStop(0.55, pal[1]); g.addColorStop(1, pal[2]);
+      x.fillStyle = g; x.fillRect(ax, ay, aw, ah);
+      x.fillStyle = 'rgba(255,236,170,.95)'; x.beginPath(); x.arc(ax + aw * 0.72, ay + 92, 52, 0, 7); x.fill();
+      x.fillStyle = 'rgba(14,30,66,.85)';
+      x.beginPath(); x.moveTo(ax, ay + ah); x.lineTo(ax, ay + 250); x.quadraticCurveTo(ax + 140, ay + 170, ax + 250, ay + 260); x.quadraticCurveTo(ax + 380, ay + 200, ax + aw, ay + 270); x.lineTo(ax + aw, ay + ah); x.fill();
+      x.strokeStyle = 'rgba(255,255,255,.55)'; x.lineWidth = 3;
+      for (var i = 0; i < 4; i++) { x.beginPath(); x.ellipse(ax + aw * 0.3, ay + 300, 40 + i * 34, 10 + i * 6, 0, 0, 7); x.stroke(); }
+      var hg = x.createLinearGradient(ax, ay, ax + aw, ay + ah);
+      hg.addColorStop(0.2, 'rgba(255,255,255,0)'); hg.addColorStop(0.45, 'rgba(255,255,255,.28)'); hg.addColorStop(0.7, 'rgba(255,255,255,0)');
+      x.fillStyle = hg; x.fillRect(ax, ay, aw, ah);
+      x.fillStyle = '#3a3a3a'; x.font = '500 22px Helvetica, Arial, sans-serif';
+      x.fillText('Tide Pull', L + 34, ay + ah + 52);
+      x.fillStyle = '#8a8474'; x.fillRect(L + 34, ay + ah + 72, aw - 40, 4); x.fillRect(L + 34, ay + ah + 90, aw - 110, 4); x.fillRect(L + 34, ay + ah + 108, aw - 70, 4);
+    } else {
+      var bb = s.b.back;
+      x.save(); x.beginPath(); x.rect(bb[0], bb[2], W - bb[0] - bb[1], H - bb[2] - bb[3]); x.clip();
+      x.fillStyle = '#3a63c8'; x.fillRect(0, 0, W, H);
+      x.strokeStyle = '#6f93e6'; x.lineWidth = 6;
+      for (var k = 0; k < 6; k++) { x.beginPath(); x.arc(W / 2, H / 2, 70 + k * 46, 0, 7); x.stroke(); }
+      x.fillStyle = '#e9e2cf'; x.beginPath(); x.arc(W / 2, H / 2, 52, 0, 7); x.fill();
+      x.fillStyle = '#16233f'; x.beginPath(); x.arc(W / 2, H / 2, 20, 0, 7); x.fill();
+      x.restore();
+    }
+    var n = s.dots[side];
+    for (var d = 0; d < n; d++) { var p = perimeterDot(d, n); x.fillStyle = 'rgba(245,244,238,.96)'; x.beginPath(); x.arc(p[0], p[1], 2.4, 0, 7); x.fill(); }
+    return c;
+  }
+
+  /* ---------- helpers ---------- */
+  var SCANS = [], cur = null, side = 'front';
+  function imgSize(im) { return [im.naturalWidth || im.width, im.naturalHeight || im.height]; }
+  function baseSize(src) { var z = imgSize(src), sc = Math.min(1, 900 / z[0]); return [Math.round(z[0] * sc), Math.round(z[1] * sc)]; }
+  function cover(x, im, cw, ch) {
+    var z = imgSize(im), sc = Math.max(cw / z[0], ch / z[1]), sw = cw / sc, sh = ch / sc;
+    x.drawImage(im, (z[0] - sw) / 2, (z[1] - sh) / 2, sw, sh, 0, 0, cw, ch);
+  }
+  function thumbInto(cv, s) { var x = cv.getContext('2d'); x.clearRect(0, 0, cv.width, cv.height); cover(x, s.imgs.front, cv.width, cv.height); }
+  function loadImg(u) { return new Promise(function (res, rej) { var im = new Image(); im.onload = function () { res(im); }; im.onerror = rej; im.src = u; }); }
+  function fmtDate(ms) { try { return new Date(ms).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } }
+  function tick() { return new Promise(function (r) { requestAnimationFrame(function () { setTimeout(r, 90); }); }); }
+
+  /* ---------- saving scans on the phone (IndexedDB) ---------- */
+  var dbp = null, storageOk = true;
+  function db() {
+    if (dbp) return dbp;
+    dbp = new Promise(function (res, rej) {
+      try {
+        var r = indexedDB.open('centering-centre', 1);
+        r.onupgradeneeded = function () { r.result.createObjectStore('scans', { keyPath: 'id' }); };
+        r.onsuccess = function () { res(r.result); };
+        r.onerror = function () { rej(r.error); };
+      } catch (e) { rej(e); }
+    });
+    return dbp;
+  }
+  function dbAll() { return db().then(function (d) { return new Promise(function (res, rej) { var q = d.transaction('scans').objectStore('scans').getAll(); q.onsuccess = function () { res(q.result); }; q.onerror = function () { rej(q.error); }; }); }); }
+  function dbPut(rec) { return db().then(function (d) { return new Promise(function (res, rej) { var t = d.transaction('scans', 'readwrite'); t.objectStore('scans').put(rec); t.oncomplete = res; t.onerror = function () { rej(t.error); }; t.onabort = function () { rej(t.error); }; }); }); }
+  function dbDel(id) { return db().then(function (d) { return new Promise(function (res, rej) { var t = d.transaction('scans', 'readwrite'); t.objectStore('scans').delete(id); t.oncomplete = res; t.onerror = function () { rej(t.error); }; }); }); }
+  function rec(s) { return { id: s.id, name: s.name, created: s.created, front: s.blobs.front, back: s.blobs.back, video: s.noVideoSaved ? null : s.blobs.video, cen: s.cen, cenMode: s.cenMode }; }
+  function saveScan(s) {
+    if (s.sample) return Promise.resolve();
+    return dbPut(rec(s)).catch(function () {
+      if (s.blobs.video && !s.noVideoSaved) {
+        s.noVideoSaved = true;
+        return dbPut(rec(s)).then(function () { toast('Saved the scan without the tilt video. The phone has no room for it.'); }).catch(function () { toast('Could not save this scan on the phone.'); });
+      }
+      toast('Could not save this scan on the phone.');
+    });
+  }
+  var saveTimer = 0;
+  function queueSave() { if (!cur || cur.sample) return; clearTimeout(saveTimer); var s = cur; saveTimer = setTimeout(function () { saveScan(s); }, 600); }
+  function loadSaved() {
+    return dbAll().then(function (recs) {
+      return Promise.all(recs.map(function (r) {
+        var fu = URL.createObjectURL(r.front), bu = URL.createObjectURL(r.back);
+        return Promise.all([loadImg(fu), loadImg(bu)]).then(function (ims) {
+          return { id: r.id, name: r.name, created: r.created, imgs: { front: ims[0], back: ims[1] }, video: r.video ? URL.createObjectURL(r.video) : null,
+            cen: r.cen, cenMode: r.cenMode || 'fill', blobs: { front: r.front, back: r.back, video: r.video || null } };
+        }).catch(function () { return null; });
+      }));
+    }).then(function (list) {
+      SCANS = list.filter(Boolean).sort(function (a, b) { return b.created - a.created; });
+      SCANS.forEach(function (s) { ensureCen(s); });
+      renderList();
+    }).catch(function () { storageOk = false; $('#storeWarn').hidden = false; renderList(); });
+  }
+
+  /* ---------- navigation ---------- */
+  function show(id) {
+    ['home', 'capture', 'result'].forEach(function (s) { $('#' + s).hidden = s !== id; });
+    $('#tabHome').setAttribute('aria-current', id === 'capture' ? 'false' : 'page');
+    $('#tabNew').setAttribute('aria-current', id === 'capture' ? 'page' : 'false');
+    if (id !== 'result') { try { $('#tiltVid').pause(); } catch (e) {} }
+    window.scrollTo(0, 0);
+  }
+  $$('[data-go]').forEach(function (b) { b.addEventListener('click', function () { show(b.getAttribute('data-go')); }); });
+  function newScan() { files = {}; blobs = {}; sampleMode = false; renderSlots(); show('capture'); }
+  $('#startNew').addEventListener('click', newScan);
+
+  /* ---------- home list ---------- */
+  function renderList() {
+    var box = $('#scanList'); box.innerHTML = '';
+    if (!SCANS.length) { box.innerHTML = '<div class="empty">No scans yet. Start a new scan to measure your first card.</div>'; return; }
+    SCANS.forEach(function (s) {
+      var mf = measureOf(s.cen.front), mb = measureOf(s.cen.back);
+      var b = document.createElement('button'); b.className = 'scan';
+      b.innerHTML = '<canvas width="128" height="178"></canvas><div><div class="name"></div><div class="meta">Added ' + fmtDate(s.created) + '</div><div class="chips"><span class="chip"><b>Front</b>' + fmtSplit(mf.worstSplit) + '</span><span class="chip"><b>Back</b>' + fmtSplit(mb.worstSplit) + '</span></div></div>';
+      b.querySelector('.name').textContent = s.name;
+      thumbInto(b.querySelector('canvas'), s);
+      b.addEventListener('click', function () { openResult(s); });
+      box.appendChild(b);
+    });
+  }
+
+  /* ---------- capture slots ---------- */
+  var SLOTS = [
+    { id: 'front', label: 'Front, flat', hint: 'Even light, no glare, card fills the frame.', kind: 'image' },
+    { id: 'back', label: 'Back, flat', hint: 'Same light. Back edges show whitening first.', kind: 'image' },
+    { id: 'tilt', label: 'Tilt video under light', hint: 'Shows scratches and print lines the flat photos miss.', kind: 'video' }
+  ];
+  var files = {}, blobs = {}, sampleMode = false;
+  var mkUrl = function (f) { return URL.createObjectURL(f); };
+
+  function renderSlots() {
+    var box = $('#slots'); box.innerHTML = '';
+    SLOTS.forEach(function (s) {
+      var list = files[s.id] || [], noun = s.kind === 'video' ? 'video' : 'photo';
+      var label = list.length ? 'Choose a different ' + noun : 'Choose ' + noun + ' from gallery';
+      var el = document.createElement('div'); el.className = 'slot' + (list.length ? ' done' : '');
+      el.innerHTML = '<div class="dot">' + (list.length ? '✓' : '') + '</div><div><h3>' + s.label + '<span class="req">required</span></h3><div class="hint">' + s.hint + '</div></div>';
+      if (list.length) {
+        var t = document.createElement('div'); t.className = 'thumbs';
+        list.forEach(function (u) {
+          var asImg = s.kind === 'image' || sampleMode, m = document.createElement(asImg ? 'img' : 'video');
+          if (asImg) { m.src = u; m.alt = s.label; } else { m.src = u + '#t=0.1'; m.muted = true; m.playsInline = true; m.preload = 'metadata'; }
+          t.appendChild(m);
+        });
+        el.appendChild(t);
+      }
+      var pk = document.createElement('div'); pk.className = 'pick';
+      pk.innerHTML = '<span class="btn ghost">' + label + '</span><input type="file" id="in_' + s.id + '" accept="' + (s.kind === 'video' ? 'video/*' : 'image/*') + '" aria-label="' + label + '">';
+      el.appendChild(pk);
+      box.appendChild(el);
+      pk.querySelector('input').addEventListener('change', function (e) {
+        var f = e.target.files[0]; if (!f) return;
+        if (sampleMode) { files = {}; blobs = {}; sampleMode = false; }
+        files[s.id] = [mkUrl(f)]; blobs[s.id] = f; renderSlots();
+      });
+    });
+    var have = SLOTS.filter(function (s) { return (files[s.id] || []).length; }).length;
+    $('#progText').textContent = have + ' / 3 required';
+    $('#progBar').style.width = (have / 3 * 100) + '%';
+    $('#analyze').disabled = have < 3;
+    $('#swap').hidden = !((files.front || []).length && (files.back || []).length);
+  }
+  $('#bulk').addEventListener('change', function (e) {
+    var list = Array.prototype.slice.call(e.target.files); if (!list.length) return;
+    var imgs = list.filter(function (f) { return /^image\//.test(f.type) || /\.(jpe?g|png|webp|heic|heif)$/i.test(f.name); });
+    var vids = list.filter(function (f) { return /^video\//.test(f.type) || /\.(mp4|mov|m4v|webm)$/i.test(f.name); });
+    if (sampleMode) { files = {}; blobs = {}; sampleMode = false; }
+    if (imgs[0]) { files.front = [mkUrl(imgs[0])]; blobs.front = imgs[0]; }
+    if (imgs[1]) { files.back = [mkUrl(imgs[1])]; blobs.back = imgs[1]; }
+    if (vids[0]) { files.tilt = [mkUrl(vids[0])]; blobs.tilt = vids[0]; }
+    renderSlots();
+    var msg = 'Added ' + imgs.length + ' photo' + (imgs.length === 1 ? '' : 's') + ' and ' + vids.length + ' video' + (vids.length === 1 ? '' : 's') + '.';
+    if (imgs.length < 2) msg += ' The back photo is still missing.';
+    else if (!vids.length) msg += ' The tilt video is still missing.';
+    else msg += ' First photo is the front, second is the back.';
+    if (imgs.length > 2) msg += ' Extra photos were ignored.';
+    toast(msg);
+    e.target.value = '';
+  });
+  $('#swap').addEventListener('click', function () { var f = files.front, b = blobs.front; files.front = files.back; blobs.front = blobs.back; files.back = f; blobs.back = b; renderSlots(); });
+  $('#clearAll').addEventListener('click', function () { files = {}; blobs = {}; sampleMode = false; renderSlots(); });
+  $('#fillSample').addEventListener('click', function () {
+    var d = SAMPLE_DEF, f = makeCard('front', d).toDataURL('image/jpeg', 0.7), b = makeCard('back', d).toDataURL('image/jpeg', 0.7);
+    files = { front: [f], back: [b], tilt: [f] }; blobs = {}; sampleMode = true; renderSlots();
+  });
+
+  /* ---------- measure ---------- */
+  var STEPS = ['Reading your photos', 'Finding card edges and borders', 'Counting white dots', 'Saving on this phone'];
+  function mark(i) { var kids = $('#ovSteps').children; for (var k = 0; k < kids.length; k++) kids[k].classList.toggle('on', k <= i); $('#ovBar').style.width = ((i + 1) / kids.length * 100) + '%'; }
+  $('#analyze').addEventListener('click', function () {
+    var ov = $('#overlay'), st = $('#ovSteps'); ov.hidden = false; st.innerHTML = ''; $('#ovBar').style.width = '0';
+    STEPS.forEach(function (t) { var d = document.createElement('div'); d.innerHTML = '<i></i>' + t; st.appendChild(d); });
+    var wasSample = sampleMode, s;
+    mark(0);
+    Promise.all([loadImg(files.front[0]), loadImg(files.back[0])]).then(function (ims) {
+      var now = Date.now();
+      s = { id: now, name: wasSample ? 'Sample card' : 'Card ' + fmtDate(now), created: now, sample: wasSample, imgs: { front: ims[0], back: ims[1] },
+        video: wasSample ? null : files.tilt[0], blobs: { front: blobs.front, back: blobs.back, video: blobs.tilt || null }, cenMode: 'fill' };
+      mark(1); return tick();
+    }).then(function () {
+      ensureCen(s); mark(2); return tick();
+    }).then(function () {
+      s.dots = { front: countDots(s.imgs.front), back: countDots(s.imgs.back) }; mark(3);
+      if (s.sample) return null;
+      SCANS.unshift(s);
+      return saveScan(s).then(function () { try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {} });
+    }).then(function () { return tick(); }).then(function () {
+      ov.hidden = true; renderList(); openResult(s);
+    }).catch(function () { ov.hidden = true; toast('One of the photos could not be read. Try a JPG or PNG.'); });
+  });
+
+  /* ---------- result: summary ---------- */
+  function openResult(s) {
+    cur = s;
+    var ni = $('#nameIn'); ni.value = s.name; ni.readOnly = !!s.sample;
+    $('#rMeta').textContent = (s.sample ? 'Sample card, not saved' : 'Added ' + fmtDate(s.created));
+    thumbInto($('#headThumb'), s);
+    ensureCen(s);
+    if (!s.dots) s.dots = { front: countDots(s.imgs.front), back: countDots(s.imgs.back) };
+    buildCenCards();
+    tool = 'dots'; syncTool();
+    var tv = $('#tiltVid'); try { tv.pause(); } catch (e) {}
+    if (s.video) tv.src = s.video + '#t=0.1'; else tv.removeAttribute('src');
+    $('#tiltTab').hidden = !s.video;
+    $('#delScan').hidden = !!s.sample; $('#delScan').textContent = 'Delete this scan';
+    setView('verdict'); setSide('front'); show('result');
+  }
+  function renderSummary() {
+    var s = cur, mf = measureOf(s.cen.front), mb = measureOf(s.cen.back);
+    $('#capGrid').innerHTML = ['psa', 'bgs', 'tag'].map(function (k) {
+      var c = capOf(k, mf, mb), sub = c.strict ? (c.poss && c.poss !== c.strict ? c.poss + ' if a point off' : '') : (c.poss ? c.poss + ' if a point off' : 'below the lowest listed');
+      return '<div><span class="label">' + LIMITS[k].name + '</span><b>' + (c.strict || '–') + '</b><span class="mono">' + sub + '</span></div>';
+    }).join('');
+    $('#sumNote').textContent = 'Front ' + fmtSplit(mf.worstSplit) + ', back ' + fmtSplit(mb.worstSplit) + '. This is the best grade centering allows. Corners, edges and surface can only lower it.';
+    $('#sumDotsF').textContent = s.dots.front; $('#sumDotsB').textContent = s.dots.back;
+    $('#sumVideo').hidden = !s.video;
+  }
+  function setView(v) {
+    $$('#viewSeg button').forEach(function (b) { b.setAttribute('aria-selected', b.getAttribute('data-view') === v); });
+    $('#verdictView').hidden = v !== 'verdict'; $('#inspectView').hidden = v !== 'inspect';
+    if (v === 'verdict') renderSummary();
+    if (v === 'inspect') { if (side !== 'tilt') { loadBase(); paint(); } } else { try { $('#tiltVid').pause(); } catch (e) {} }
+  }
+  $$('#viewSeg button').forEach(function (b) { b.addEventListener('click', function () { setView(b.getAttribute('data-view')); }); });
+  function openInspect(t, sd) { tool = t; syncTool(); setSide('front'); setView('inspect'); if (sd) setSide(sd); window.scrollTo(0, 0); }
+  $('#toCentering').addEventListener('click', function () { openInspect('centering'); });
+  $('#toDots').addEventListener('click', function () { openInspect('dots'); });
+  $('#toVideo').addEventListener('click', function () { openInspect('dots', 'tilt'); });
+  $('#nameIn').addEventListener('change', function () { if (!cur || cur.sample) return; cur.name = this.value.trim() || 'Untitled card'; this.value = cur.name; queueSave(); renderList(); });
+  var delTimer = 0;
+  $('#delScan').addEventListener('click', function () {
+    var b = this;
+    if (b.getAttribute('data-arm') !== '1') { b.setAttribute('data-arm', '1'); b.textContent = 'Tap again to delete'; clearTimeout(delTimer); delTimer = setTimeout(function () { b.removeAttribute('data-arm'); b.textContent = 'Delete this scan'; }, 3500); return; }
+    b.removeAttribute('data-arm'); var s = cur;
+    dbDel(s.id).catch(function () {}).then(function () { SCANS = SCANS.filter(function (x) { return x !== s; }); renderList(); show('home'); toast('Scan deleted.'); });
+  });
+
+  /* ---------- inspect: white dots (filter runs on the real pixels) ---------- */
+  var cv = $('#cv'), ctx = cv.getContext('2d', { willReadFrequently: true });
+  var baseData = null, LUM = null, INT = null, raf = 0;
+  function setSide(s) {
+    side = s;
+    $$('#sideSeg button').forEach(function (b) { b.setAttribute('aria-selected', b.getAttribute('data-side') === s); });
+    var tilt = s === 'tilt';
+    $('#photoPane').hidden = tilt; $('#videoPane').hidden = !tilt;
+    if (!tilt) { try { $('#tiltVid').pause(); } catch (e) {} $('#viewer').classList.remove('zoom'); if (!$('#inspectView').hidden) { loadBase(); paint(); } }
+  }
+  $$('#sideSeg button').forEach(function (b) { b.addEventListener('click', function () { setSide(b.getAttribute('data-side')); }); });
+  $('#viewer').addEventListener('click', function () { if (tool !== 'dots') return; this.classList.toggle('zoom'); });
+
+  function lumFromData(d, n) { var L = new Uint8Array(n); for (var i = 0, p = 0; p < n; i += 4, p++) L[p] = (0.3 * d[i] + 0.59 * d[i + 1] + 0.11 * d[i + 2]) | 0; return L; }
+  function buildInt(L, w, h) {
+    var W1 = w + 1, I = new Uint32Array(W1 * (h + 1));
+    for (var y = 0; y < h; y++) { var run = 0; for (var x = 0; x < w; x++) { run += L[y * w + x]; I[(y + 1) * W1 + x + 1] = I[y * W1 + x + 1] + run; } }
+    return I;
+  }
+  function lumOf(src) {
+    var sz = baseSize(src), c = document.createElement('canvas'); c.width = sz[0]; c.height = sz[1];
+    var x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(src, 0, 0, sz[0], sz[1]);
+    return { lum: lumFromData(x.getImageData(0, 0, sz[0], sz[1]).data, sz[0] * sz[1]), w: sz[0], h: sz[1] };
+  }
+  function loadBase() {
+    var src = cur.imgs[side], sz = baseSize(src), w = sz[0], h = sz[1]; cv.width = w; cv.height = h;
+    ctx.drawImage(src, 0, 0, w, h);
+    baseData = ctx.getImageData(0, 0, w, h);
+    LUM = lumFromData(baseData.data, w * h); INT = buildInt(LUM, w, h);
+  }
+  function analyzeBuf(LM, IN, w, h, thr) {
+    var band = Math.max(10, Math.round(w * 0.045)), r = Math.max(5, Math.round(w / 110)), W1 = w + 1;
+    var cell = Math.max(10, Math.round(w / 45)), cols = Math.ceil(w / cell), rows = Math.ceil(h / cell);
+    var hot = new Uint8Array(w * h), cnt = new Uint16Array(cols * rows);
+    for (var y = 0; y < h; y++) {
+      var inY = y < band || y >= h - band;
+      for (var x = 0; x < w; x++) {
+        if (!inY && x >= band && x < w - band) { x = w - band - 1; continue; }
+        var p = y * w + x, l = LM[p]; if (l < thr) continue;
+        var x0 = x - r < 0 ? 0 : x - r, x1 = x + r + 1 > w ? w : x + r + 1, y0 = y - r < 0 ? 0 : y - r, y1 = y + r + 1 > h ? h : y + r + 1;
+        var mean = (IN[y1 * W1 + x1] - IN[y0 * W1 + x1] - IN[y1 * W1 + x0] + IN[y0 * W1 + x0]) / ((x1 - x0) * (y1 - y0));
+        if (l - mean > 32) { hot[p] = 1; cnt[((y / cell) | 0) * cols + ((x / cell) | 0)]++; }
+      }
+    }
+    var seen = new Uint8Array(cols * rows), out = [];
+    for (var c = 0; c < cnt.length; c++) {
+      if (cnt[c] < 3 || seen[c]) continue;
+      var q = [c], sx = 0, sy = 0, n = 0; seen[c] = 1;
+      while (q.length) {
+        var k = q.pop(), kx = k % cols, ky = (k / cols) | 0; sx += kx; sy += ky; n++;
+        for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) {
+          var nx = kx + dx, ny = ky + dy; if (nx < 0 || ny < 0 || nx >= cols || ny >= rows) continue;
+          var ni = ny * cols + nx; if (!seen[ni] && cnt[ni] >= 3) { seen[ni] = 1; q.push(ni); }
+        }
+      }
+      out.push([(sx / n + 0.5) * cell, (sy / n + 0.5) * cell]);
+    }
+    return { hot: hot, dots: out };
+  }
+  function countDots(img) { var L = lumOf(img); return analyzeBuf(L.lum, buildInt(L.lum, L.w, L.h), L.w, L.h, 175).dots.length; }
+  function paint() {
+    if (!baseData) return;
+    if (tool === 'centering') { paintCentering(); return; }
+    var w = cv.width, h = cv.height, thr = 235 - Number($('#sens').value), res = analyzeBuf(LUM, INT, w, h, thr);
+    var out = ctx.createImageData(w, h), s = baseData.data, o = out.data, on = $('#fltr').checked;
+    for (var i = 0, p = 0; i < o.length; i += 4, p++) {
+      if (on) {
+        var m = LUM[p] * 0.42;
+        if (res.hot[p]) { o[i] = 255; o[i + 1] = 176; o[i + 2] = 0; } else { o[i] = m; o[i + 1] = m; o[i + 2] = m + 6; }
+        o[i + 3] = 255;
+      } else { o[i] = s[i]; o[i + 1] = s[i + 1]; o[i + 2] = s[i + 2]; o[i + 3] = 255; }
+    }
+    ctx.putImageData(out, 0, 0);
+    if ($('#mrk').checked) {
+      ctx.strokeStyle = '#ff5a4d'; ctx.lineWidth = Math.max(2, w / 240);
+      res.dots.forEach(function (d) { ctx.beginPath(); ctx.arc(d[0], d[1], Math.max(11, w / 55), 0, 7); ctx.stroke(); });
+    }
+    $('#dotCount').textContent = res.dots.length;
+    $('#dotLabel').textContent = 'suspected white dot' + (res.dots.length === 1 ? '' : 's') + ' on the ' + side;
+  }
+  function schedule() { cancelAnimationFrame(raf); raf = requestAnimationFrame(paint); }
+  $('#fltr').addEventListener('change', schedule); $('#mrk').addEventListener('change', schedule);
+  $('#sens').addEventListener('input', function () { $('#sensVal').textContent = this.value; schedule(); });
+
+  /* ---------- centering: measure the borders, compare with each grader's limits ---------- */
+  var LIMITS = {
+    psa: { name: 'PSA', rows: [['10', 55, 75], ['9', 60, 90], ['8', 65, 90], ['7', 70, 90], ['6', 80, 90], ['5', 85, 90], ['4', 85, 90], ['3', 90, 90]] },
+    bgs: { name: 'Beckett', rows: [['10', 50, null], ['9.5', 55, null], ['9', 60, null], ['8.5', 65, null]] },
+    tag: { name: 'TAG', rows: [['Pristine 10', 51, 52], ['Gem Mint 10', 55, 65, 1], ['Mint 9', 60, 75, 1]] }
+  };
+  var targets = { psa: '10', bgs: '9.5', tag: 'Gem Mint 10' };
+  var tool = 'dots', selLine = 'il', dragKey = null;
+  var KEYS = ['ol', 'il', 'ir', 'or', 'ot', 'it', 'ib', 'ob'];
+  var XKEY = { ol: 1, il: 1, ir: 1, or: 1 };
+  var LNAME = { ol: 'Left card edge', il: 'Left border to picture', ir: 'Right border to picture', or: 'Right card edge', ot: 'Top card edge', it: 'Top border to picture', ib: 'Bottom border to picture', ob: 'Bottom card edge' };
+
+  function edgeIn(g, from, to) {
+    var n = g.length, step = to >= from ? 1 : -1;
+    from = Math.max(0, Math.min(n - 1, from)); to = Math.max(0, Math.min(n - 1, to));
+    var lo = Math.min(from, to), hi = Math.max(from, to), M = 0, i;
+    for (i = lo; i <= hi; i++) M = Math.max(M, Math.abs(g[i]));
+    if (M < 12) return null;
+    var th = M * 0.7;
+    for (i = from; step > 0 ? i <= to : i >= to; i += step) {
+      if (Math.abs(g[i]) >= th) {
+        var s = i;
+        while (i + step >= lo && i + step <= hi && Math.abs(g[i + step]) >= th) i += step;
+        return (s + i) / 2 + 0.5;
+      }
+    }
+    return null;
+  }
+  function detect(lum, w, h, surface) {
+    function prof(vertical) {
+      var n = vertical ? h : w, other = vertical ? w : h, a0 = Math.round(other * 0.3), a1 = Math.round(other * 0.7), p = new Float32Array(n);
+      for (var i = 0; i < n; i++) { var s = 0; for (var a = a0; a < a1; a++) s += vertical ? lum[i * w + a] : lum[a * w + i]; p[i] = s / (a1 - a0); }
+      return p;
+    }
+    function grad(p) { var n = p.length, g = new Float32Array(n); for (var i = 0; i < n; i++) g[i] = p[Math.min(n - 1, i + 2)] - p[Math.max(0, i - 2)]; return g; }
+    function axis(n, vertical) {
+      var g = grad(prof(vertical)), o0 = 0, o1 = n;
+      if (surface) {
+        var e0 = edgeIn(g, 1, Math.round(n * 0.25)); if (e0 !== null) o0 = e0;
+        var e1 = edgeIn(g, n - 2, n - 1 - Math.round(n * 0.25)); if (e1 !== null) o1 = e1;
+      }
+      var span = o1 - o0;
+      var i0 = edgeIn(g, Math.round(o0 + span * 0.03), Math.round(o0 + span * 0.2));
+      var i1 = edgeIn(g, Math.round(o1 - span * 0.03), Math.round(o1 - span * 0.2));
+      if (i0 === null) i0 = o0 + span * 0.05;
+      if (i1 === null) i1 = o1 - span * 0.05;
+      return [o0, i0, i1, o1];
+    }
+    var X = axis(w, false), Y = axis(h, true);
+    return { w: w, h: h, ol: X[0], il: X[1], ir: X[2], or: X[3], ot: Y[0], it: Y[1], ib: Y[2], ob: Y[3] };
+  }
+  function ensureCen(s, force) {
+    if (s.cen && !force) return;
+    s.cen = s.cen || {}; s.cenMode = s.cenMode || 'fill';
+    ['front', 'back'].forEach(function (sd) {
+      var L = lumOf(s.imgs[sd]);
+      s.cen[sd] = detect(L.lum, L.w, L.h, s.cenMode === 'surface');
+    });
+  }
+  function measureOf(c) {
+    var l = c.il - c.ol, r = c.or - c.ir, t = c.it - c.ot, b = c.ob - c.ib;
+    function split(a, d) { var s = a + d; return s <= 0 ? [50, 50] : [a / s * 100, d / s * 100]; }
+    var lr = split(l, r), tb = split(t, b), wLR = Math.max(lr[0], lr[1]), wTB = Math.max(tb[0], tb[1]);
+    return { lr: lr, tb: tb, worst: Math.max(wLR, wTB), worstSplit: wLR >= wTB ? lr : tb, worstAxis: wLR >= wTB ? 'left to right' : 'top to bottom' };
+  }
+  function fmtSplit(sp) { var a = Math.round(Math.max(sp[0], sp[1])); return a + '/' + (100 - a); }
+  function limStr(v) { return v + '/' + (100 - v); }
+  function rank(st) { return st === 'ok' ? 0 : st === 'edge' ? 1 : 2; }
+  function statusOf(worst, lim) { return worst <= lim - 1 ? 'ok' : (worst <= lim + 1.5 ? 'edge' : 'over'); }
+  function gradeStatus(row, mf, mb) {
+    var fs = statusOf(mf.worst, row[1]), bs = row[2] != null ? statusOf(mb.worst, row[2]) : null;
+    return { fs: fs, bs: bs, st: bs && rank(bs) > rank(fs) ? bs : fs };
+  }
+  function capOf(k, mf, mb) {
+    var strict = null, poss = null;
+    LIMITS[k].rows.forEach(function (r) { var st = gradeStatus(r, mf, mb).st; if (!strict && st === 'ok') strict = r[0]; if (!poss && st !== 'over') poss = r[0]; });
+    return { strict: strict, poss: poss };
+  }
+  function renderCard(k, mf, mb) {
+    var L = LIMITS[k], row = L.rows.filter(function (r) { return r[0] === targets[k]; })[0] || L.rows[0];
+    var g = gradeStatus(row, mf, mb), cap = capOf(k, mf, mb), nm = L.name + ' ' + row[0], bits = [], why;
+    if (g.fs !== 'ok') bits.push('front ' + fmtSplit(mf.worstSplit) + ' ' + mf.worstAxis + ' (limit ' + limStr(row[1]) + ')');
+    if (g.bs && g.bs !== 'ok') bits.push('back ' + fmtSplit(mb.worstSplit) + ' ' + mb.worstAxis + ' (limit ' + limStr(row[2]) + ')');
+    if (g.st === 'ok') why = 'Centering does not block ' + nm + '. Front ' + fmtSplit(mf.worstSplit) + (g.bs ? ' and back ' + fmtSplit(mb.worstSplit) : '') + ' are inside the limits.';
+    else if (g.st === 'edge') why = 'Centering is borderline for ' + nm + ': ' + bits.join(' and ') + '. That is within about a point, which a phone photo cannot settle. Re-shoot flat and check the lines.';
+    else {
+      why = 'Centering blocks ' + nm + ': ' + bits.join(' and ') + '.';
+      if (g.fs === 'over') why += ' The front is ' + (mf.worst - row[1]).toFixed(1) + ' points over.';
+      if (g.bs === 'over') why += ' The back is ' + (mb.worst - row[2]).toFixed(1) + ' points over.';
+    }
+    var capTxt = cap.strict ? 'Strict cap from centering: ' + L.name + ' ' + cap.strict : 'Centering is below the lowest grade listed.';
+    if (cap.poss && cap.poss !== cap.strict) capTxt += ' · ' + L.name + ' ' + cap.poss + ' if the lines are a point off';
+    var html = '<div class="lad head"><span>Grade</span><span>Front</span><span>Back</span><span></span></div>';
+    L.rows.forEach(function (r) {
+      var gs = gradeStatus(r, mf, mb), ap = r[3] ? '~' : '';
+      html += '<div class="lad' + (r[0] === row[0] ? ' target' : '') + '"><span>' + r[0] + '</span><span>' + ap + limStr(r[1]) + '</span><span>' + (r[2] != null ? ap + limStr(r[2]) : '–') + '</span><span class="st ' + gs.st + '">' + (gs.st === 'ok' ? 'Fits' : gs.st === 'edge' ? 'Borderline' : 'Over') + '</span></div>';
+    });
+    $('#why_' + k).textContent = why; $('#cap_' + k).textContent = capTxt; $('#lad_' + k).innerHTML = html;
+  }
+  function buildCenCards() {
+    var box = $('#cenCards'); box.innerHTML = '';
+    Object.keys(LIMITS).forEach(function (k) {
+      var L = LIMITS[k], el = document.createElement('div'); el.className = 'verdict';
+      el.innerHTML = '<div class="row between"><h3>' + L.name + '</h3><label class="tsel">Grade you want<select id="tg_' + k + '" aria-label="Grade you want from ' + L.name + '">' +
+        L.rows.map(function (r) { return '<option' + (r[0] === targets[k] ? ' selected' : '') + '>' + r[0] + '</option>'; }).join('') +
+        '</select></label></div><p class="why" id="why_' + k + '"></p><p class="capline mono" id="cap_' + k + '"></p><div class="ladder" id="lad_' + k + '"></div>';
+      box.appendChild(el);
+      el.querySelector('select').addEventListener('change', function (e) { targets[k] = e.target.value; updateMeasure(); });
+    });
+  }
+  function updateMeasure() {
+    var mf = measureOf(cur.cen.front), mb = measureOf(cur.cen.back), m = side === 'back' ? mb : mf;
+    $('#cenLR').textContent = fmtSplit(m.lr); $('#cenTB').textContent = fmtSplit(m.tb);
+    $('#cenLRd').textContent = 'left ' + m.lr[0].toFixed(1) + '% · right ' + m.lr[1].toFixed(1) + '%';
+    $('#cenTBd').textContent = 'top ' + m.tb[0].toFixed(1) + '% · bottom ' + m.tb[1].toFixed(1) + '%';
+    $('#cenSideNote').textContent = 'Showing the ' + side + '. The grade ladders below combine the front and the back.';
+    $('#selName').textContent = LNAME[selLine];
+    var xs = XKEY[selLine] === 1; $('#nudgeM').textContent = xs ? '←' : '↑'; $('#nudgeP').textContent = xs ? '→' : '↓';
+    Object.keys(LIMITS).forEach(function (k) { renderCard(k, mf, mb); });
+  }
+  function syncTool() {
+    $$('#toolSeg button').forEach(function (b) { b.setAttribute('aria-selected', b.getAttribute('data-tool') === tool); });
+    $('#dotsTools').hidden = tool !== 'dots'; $('#cenTools').hidden = tool !== 'centering'; $('#zoomHint').hidden = tool !== 'dots';
+    $('#viewer').classList.remove('zoom'); $('#viewer').classList.toggle('cen', tool === 'centering');
+    $$('#cenModeSeg button').forEach(function (b) { b.setAttribute('aria-selected', b.getAttribute('data-m') === ((cur && cur.cenMode) || 'fill')); });
+  }
+  function paintCentering() {
+    var w = cv.width, h = cv.height, c = cur.cen[side];
+    ctx.putImageData(baseData, 0, 0);
+    ctx.fillStyle = 'rgba(255,176,0,.22)';
+    ctx.fillRect(c.ol, 0, c.il - c.ol, h); ctx.fillRect(c.ir, 0, c.or - c.ir, h);
+    ctx.fillRect(0, c.ot, w, c.it - c.ot); ctx.fillRect(0, c.ib, w, c.ob - c.ib);
+    var lw = Math.max(2, w / 260), hr = Math.max(10, w / 60);
+    KEYS.forEach(function (k) {
+      var isX = XKEY[k] === 1, v = c[k], outer = k.charAt(0) === 'o', sel = k === selLine;
+      ctx.strokeStyle = outer ? '#20c5ff' : '#ffb000'; ctx.lineWidth = sel ? lw * 2 : lw;
+      ctx.beginPath(); if (isX) { ctx.moveTo(v, 0); ctx.lineTo(v, h); } else { ctx.moveTo(0, v); ctx.lineTo(w, v); } ctx.stroke();
+      var hx = isX ? Math.min(Math.max(v, hr), w - hr) : w / 2, hy = isX ? h / 2 : Math.min(Math.max(v, hr), h - hr);
+      ctx.fillStyle = outer ? '#20c5ff' : '#ffb000'; ctx.strokeStyle = '#fff'; ctx.lineWidth = sel ? lw * 1.6 : lw * 0.8;
+      ctx.beginPath(); ctx.arc(hx, hy, sel ? hr * 1.25 : hr, 0, 7); ctx.fill(); ctx.stroke();
+    });
+    updateMeasure();
+  }
+  function setLine(k, v) {
+    var c = cur.cen[side], lim = {
+      ol: [0, c.il - 2], il: [c.ol + 2, c.ir - 4], ir: [c.il + 4, c.or - 2], or: [c.ir + 2, c.w],
+      ot: [0, c.it - 2], it: [c.ot + 2, c.ib - 4], ib: [c.it + 4, c.ob - 2], ob: [c.ib + 2, c.h]
+    }[k];
+    c[k] = Math.max(lim[0], Math.min(lim[1], v));
+  }
+  function canvasPt(cx, cy) { var r = cv.getBoundingClientRect(); return [(cx - r.left) * cv.width / r.width, (cy - r.top) * cv.height / r.height, cv.width / r.width]; }
+  function startDrag(cx, cy) {
+    if (tool !== 'centering' || !cur || !cur.cen) return false;
+    var pt = canvasPt(cx, cy), c = cur.cen[side], best = null, bd = 1e9;
+    KEYS.forEach(function (k) { var d = Math.abs((XKEY[k] === 1 ? pt[0] : pt[1]) - c[k]); if (d < bd) { bd = d; best = k; } });
+    if (bd > 26 * pt[2]) return false;
+    selLine = best; dragKey = best; schedule(); return true;
+  }
+  function moveDrag(cx, cy) { var pt = canvasPt(cx, cy); setLine(dragKey, XKEY[dragKey] === 1 ? pt[0] : pt[1]); schedule(); }
+  function endDrag() { if (dragKey) queueSave(); dragKey = null; }
+  cv.addEventListener('touchstart', function (e) { var t = e.touches[0]; if (startDrag(t.clientX, t.clientY)) e.preventDefault(); }, { passive: false });
+  cv.addEventListener('touchmove', function (e) { if (dragKey) { e.preventDefault(); moveDrag(e.touches[0].clientX, e.touches[0].clientY); } }, { passive: false });
+  cv.addEventListener('touchend', endDrag); cv.addEventListener('touchcancel', endDrag);
+  cv.addEventListener('mousedown', function (e) { if (startDrag(e.clientX, e.clientY)) e.preventDefault(); });
+  window.addEventListener('mousemove', function (e) { if (dragKey) moveDrag(e.clientX, e.clientY); });
+  window.addEventListener('mouseup', endDrag);
+  function nudge(d) { if (!cur || !cur.cen) return; setLine(selLine, cur.cen[side][selLine] + d); schedule(); queueSave(); }
+  $('#nudgeM').addEventListener('click', function () { nudge(-1); });
+  $('#nudgeP').addEventListener('click', function () { nudge(1); });
+  $('#cenReset').addEventListener('click', function () { ensureCen(cur, true); schedule(); queueSave(); });
+  $$('#toolSeg button').forEach(function (b) { b.addEventListener('click', function () { tool = b.getAttribute('data-tool'); syncTool(); if (baseData) paint(); }); });
+  $$('#cenModeSeg button').forEach(function (b) { b.addEventListener('click', function () { cur.cenMode = b.getAttribute('data-m'); ensureCen(cur, true); syncTool(); schedule(); queueSave(); }); });
+
+  /* ---------- install prompt and offline support ---------- */
+  var deferredInstall = null;
+  var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault(); deferredInstall = e;
+    $('#installTxt').textContent = 'Install Centering Centre on your home screen to open it like an app, even offline.';
+    $('#installBtn').hidden = false; $('#installBox').hidden = false;
+  });
+  $('#installBtn').addEventListener('click', function () {
+    if (!deferredInstall) return;
+    deferredInstall.prompt();
+    deferredInstall.userChoice.then(function () { deferredInstall = null; $('#installBox').hidden = true; });
+  });
+  window.addEventListener('appinstalled', function () { $('#installBox').hidden = true; });
+  if (!standalone && /iphone|ipad|ipod/i.test(navigator.userAgent)) {
+    $('#installTxt').textContent = 'To install: tap the Share button in Safari, then Add to Home Screen. It then opens like an app and works offline.';
+    $('#installBox').hidden = false;
+  }
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  }
+
+  renderList(); renderSlots(); loadSaved();
+})();
+</script>
+</body>
+</html>
